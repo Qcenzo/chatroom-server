@@ -20,12 +20,12 @@ public class MediaUploadServlet extends HttpServlet
 	{
 		try
 		{
+			request.setCharacterEncoding("UTF-8");
 			List<FileItem> fls = upload.parseRequest(request);
 			for (FileItem f:fls)
 			{
 				if (f.getName() != null)
 				{
-					//System.out.println("creator=" + request.getQueryString().split("=")[1]);
 					FileOutputStream fs = new FileOutputStream(getServletContext().getRealPath(getServletConfig().getInitParameter("path") 
 							+ "\\" + f.getName()));  
 					fs.write(f.get());  
