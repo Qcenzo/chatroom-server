@@ -67,6 +67,27 @@ public class SqlConnection
 		}
 	}
 	
+	public boolean update(String name)
+	{
+		try
+		{
+			int n = cache.size();
+			for (int i = 0; i < cache.size(); i++)
+				if (cache.get(i)[1].equals(name) && !cache.get(i)[3].equals("vod"))
+					cache.remove(i--); 
+			
+			if (n == cache.size())
+				return false;
+			
+			conn.createStatement().execute("delete from play_list where creator='" + name + "' and type<>'vod'");
+		}
+		catch (Throwable t)
+		{
+			t.printStackTrace();
+		}
+		return true;
+	}
+	
 	public Object[] data()
 	{
 		return cache.toArray();

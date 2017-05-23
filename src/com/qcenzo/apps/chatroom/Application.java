@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.red5.server.adapter.ApplicationAdapter;
 import org.red5.server.api.IClient;
 import org.red5.server.api.IConnection;
+import org.red5.server.api.Red5;
 import org.red5.server.api.scope.IScope;
 import org.red5.server.api.service.IServiceCapableConnection;
 
@@ -22,11 +23,18 @@ public class Application extends ApplicationAdapter
 	 
 	public boolean connect(IConnection conn, IScope app, Object[] params)
 	{
-		//连接时验证登录名，有同名则把前一个用户的连接断开
 		User u = new User(conn, params);
 		String uname = u.name();
 		if (map.containsKey(uname)) 
-			map.get(uname).conn.close();
+		{
+			if (u.priority() <= map.get(uname).priority())
+			{
+				rejectClient();
+				return false;
+			}
+			IServiceCapableConnection c = (IServiceCapableConnection) map.remove(uname).conn;
+			c.invoke("quit");
+		}
 		map.put(uname, u); 
 		return super.connect(conn, app, params);   
 	}
@@ -40,15 +48,16 @@ public class Application extends ApplicationAdapter
 	
 	public void disconnect(IConnection conn, IScope app)
 	{
-		//用户断开时广播访客列表
+		updateVideoList();
+		
 		for (String uname:map.keySet())
 			if (map.get(uname).conn.equals(conn))
 			{
 				map.remove(uname);
 				break;
 			}
-		 
 		broadcastVisitorList();
+		
 		super.disconnect(conn, app);
 	}
 	
@@ -71,6 +80,20 @@ public class Application extends ApplicationAdapter
 	{
 		sqlc.insert(name, creator, type);
 		broadcastVideoList();  
+	}
+	
+	public void updateVideoList()
+	{
+		IConnection conn = Red5.getConnectionLocal();
+		for (String uname:map.keySet())
+		{
+			if (map.get(uname).conn == conn)
+			{
+				if (sqlc.update(uname))
+					broadcastVideoList();
+				break;
+			}
+		}
 	}
 	
 	private void broadcastVisitorList()

@@ -17,4 +17,9 @@ public class User
 	{
 		return (String) params[0];
 	}
+	
+	public int priority()
+	{
+		return (int) Math.pow((double) params[2], 1);
+	}
 }
